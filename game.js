@@ -12,6 +12,8 @@ const jumpscare = document.getElementById("jumpscare");
 const BEST_SCORE_KEY = "meteor-sprint-best-score";
 const keys = new Set();
 let jumpscareTimeoutId = null;
+let audioContext = null;
+let audioUnlocked = false;
 
 function readBestScore() {
   try {
@@ -28,6 +30,112 @@ function writeBestScore(score) {
   } catch {
     // Ignore storage failures so the game still runs in restricted browser modes.
   }
+}
+
+function getAudioContext() {
+  if (typeof window.AudioContext === "undefined" && typeof window.webkitAudioContext === "undefined") {
+    return null;
+  }
+
+  if (!audioContext) {
+    const ContextConstructor = window.AudioContext || window.webkitAudioContext;
+    audioContext = new ContextConstructor();
+  }
+
+  return audioContext;
+}
+
+async function unlockAudio() {
+  const context = getAudioContext();
+  if (!context) {
+    return;
+  }
+
+  if (context.state === "suspended") {
+    try {
+      await context.resume();
+    } catch {
+      return;
+    }
+  }
+
+  audioUnlocked = context.state === "running";
+}
+
+function createNoiseBuffer(context) {
+  const durationSeconds = 0.9;
+  const frameCount = Math.floor(context.sampleRate * durationSeconds);
+  const noiseBuffer = context.createBuffer(1, frameCount, context.sampleRate);
+  const channelData = noiseBuffer.getChannelData(0);
+
+  for (let index = 0; index < frameCount; index += 1) {
+    channelData[index] = Math.random() * 2 - 1;
+  }
+
+  return noiseBuffer;
+}
+
+function playJumpscareSound() {
+  const context = getAudioContext();
+  if (!context || !audioUnlocked) {
+    return;
+  }
+
+  const now = context.currentTime;
+
+  const masterGain = context.createGain();
+  masterGain.gain.setValueAtTime(0.0001, now);
+  masterGain.gain.exponentialRampToValueAtTime(0.75, now + 0.015);
+  masterGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.15);
+  masterGain.connect(context.destination);
+
+  const toneOscillator = context.createOscillator();
+  toneOscillator.type = "sawtooth";
+  toneOscillator.frequency.setValueAtTime(190, now);
+  toneOscillator.frequency.exponentialRampToValueAtTime(58, now + 0.46);
+
+  const toneGain = context.createGain();
+  toneGain.gain.setValueAtTime(0.0001, now);
+  toneGain.gain.exponentialRampToValueAtTime(0.42, now + 0.03);
+  toneGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.65);
+  toneOscillator.connect(toneGain);
+  toneGain.connect(masterGain);
+
+  const shriekOscillator = context.createOscillator();
+  shriekOscillator.type = "triangle";
+  shriekOscillator.frequency.setValueAtTime(880, now);
+  shriekOscillator.frequency.exponentialRampToValueAtTime(1760, now + 0.08);
+  shriekOscillator.frequency.exponentialRampToValueAtTime(240, now + 0.42);
+
+  const shriekGain = context.createGain();
+  shriekGain.gain.setValueAtTime(0.0001, now);
+  shriekGain.gain.exponentialRampToValueAtTime(0.34, now + 0.015);
+  shriekGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
+  shriekOscillator.connect(shriekGain);
+  shriekGain.connect(masterGain);
+
+  const noiseSource = context.createBufferSource();
+  noiseSource.buffer = createNoiseBuffer(context);
+
+  const noiseFilter = context.createBiquadFilter();
+  noiseFilter.type = "bandpass";
+  noiseFilter.frequency.setValueAtTime(1400, now);
+  noiseFilter.Q.setValueAtTime(0.8, now);
+
+  const noiseGain = context.createGain();
+  noiseGain.gain.setValueAtTime(0.0001, now);
+  noiseGain.gain.exponentialRampToValueAtTime(0.18, now + 0.02);
+  noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.52);
+  noiseSource.connect(noiseFilter);
+  noiseFilter.connect(noiseGain);
+  noiseGain.connect(masterGain);
+
+  toneOscillator.start(now);
+  toneOscillator.stop(now + 0.7);
+  shriekOscillator.start(now);
+  shriekOscillator.stop(now + 0.45);
+  noiseSource.start(now);
+  noiseSource.stop(now + 0.55);
 }
 
 function hideJumpscare() {
@@ -56,13 +164,14 @@ function triggerJumpscare() {
   jumpscare.classList.add("is-visible");
   jumpscare.setAttribute("aria-hidden", "false");
   document.body.classList.add("jumpscare-active");
+  playJumpscareSound();
 
   jumpscareTimeoutId = window.setTimeout(() => {
     jumpscare.classList.remove("is-visible");
     jumpscare.setAttribute("aria-hidden", "true");
     document.body.classList.remove("jumpscare-active");
     jumpscareTimeoutId = null;
-  }, 900);
+  }, 1450);
 }
 
 const state = {
@@ -490,6 +599,7 @@ function normalizeKey(key) {
 }
 
 window.addEventListener("keydown", (event) => {
+  void unlockAudio();
   const key = normalizeKey(event.key);
 
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(event.key)) {
@@ -511,6 +621,7 @@ window.addEventListener("keyup", (event) => {
 });
 
 startButton.addEventListener("click", () => {
+  void unlockAudio();
   resetGame();
 });
 
