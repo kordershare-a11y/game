@@ -27,6 +27,10 @@ body {
     linear-gradient(180deg, #060816 0%, #04050d 100%);
 }
 
+body.jumpscare-active {
+  overflow: hidden;
+}
+
 body::before {
   content: "";
   position: fixed;
@@ -198,6 +202,195 @@ button:active {
   line-height: 1.6;
 }
 
+.jumpscare {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background:
+    radial-gradient(circle at center, rgba(255, 78, 78, 0.45), rgba(10, 0, 0, 0.96) 45%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.95));
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+.jumpscare.is-visible {
+  opacity: 1;
+  animation:
+    jumpscare-flash 650ms steps(2, end),
+    jumpscare-shake 650ms linear;
+}
+
+.jumpscare-face {
+  position: relative;
+  width: min(56vw, 440px);
+  aspect-ratio: 0.8;
+  border-radius: 48% 48% 40% 40%;
+  background:
+    radial-gradient(circle at 50% 28%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0) 18%),
+    radial-gradient(circle at 50% 50%, rgba(146, 0, 0, 0.35), rgba(22, 0, 0, 0.95) 64%),
+    linear-gradient(180deg, #5a0c0c 0%, #120203 100%);
+  border: 4px solid rgba(255, 226, 226, 0.16);
+  box-shadow:
+    0 0 35px rgba(255, 46, 46, 0.7),
+    0 0 140px rgba(255, 32, 32, 0.35);
+  transform: scale(0.92);
+}
+
+.jumpscare.is-visible .jumpscare-face {
+  animation:
+    jumpscare-pop 650ms ease-out,
+    jumpscare-flicker 160ms steps(2, end) 4;
+}
+
+.jumpscare-eye {
+  position: absolute;
+  top: 29%;
+  width: 24%;
+  height: 17%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, #ff2f2f 0 18%, #120203 19% 36%, #fbe9e9 37% 100%);
+  box-shadow: 0 0 24px rgba(255, 58, 58, 0.75);
+}
+
+.jumpscare-eye-left {
+  left: 15%;
+  transform: rotate(-9deg);
+}
+
+.jumpscare-eye-right {
+  right: 15%;
+  transform: rotate(9deg);
+}
+
+.jumpscare-mouth {
+  position: absolute;
+  left: 50%;
+  bottom: 15%;
+  width: 44%;
+  height: 24%;
+  transform: translateX(-50%);
+  border-radius: 50% 50% 44% 44%;
+  background:
+    linear-gradient(180deg, #000 0%, #3b0202 70%, #7f1010 100%);
+  box-shadow:
+    inset 0 0 0 3px rgba(255, 219, 219, 0.16),
+    0 0 24px rgba(255, 40, 40, 0.35);
+}
+
+.jumpscare-mouth::before,
+.jumpscare-mouth::after {
+  content: "";
+  position: absolute;
+  top: 9%;
+  width: 14%;
+  height: 32%;
+  background: linear-gradient(180deg, #ffffff, #cfcfcf);
+  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+}
+
+.jumpscare-mouth::before {
+  left: 19%;
+}
+
+.jumpscare-mouth::after {
+  right: 19%;
+}
+
+.jumpscare-caption {
+  position: absolute;
+  bottom: 7%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  color: #ffe7e7;
+  font-size: clamp(1.2rem, 3vw, 2rem);
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  text-align: center;
+  text-shadow: 0 0 18px rgba(255, 50, 50, 0.92);
+}
+
+@keyframes jumpscare-flash {
+  0%,
+  100% {
+    background:
+      radial-gradient(circle at center, rgba(255, 78, 78, 0.45), rgba(10, 0, 0, 0.96) 45%),
+      linear-gradient(180deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.95));
+  }
+
+  25% {
+    background:
+      radial-gradient(circle at center, rgba(255, 180, 180, 0.95), rgba(65, 0, 0, 0.98) 45%),
+      linear-gradient(180deg, rgba(30, 0, 0, 0.4), rgba(0, 0, 0, 1));
+  }
+
+  50% {
+    background:
+      radial-gradient(circle at center, rgba(255, 46, 46, 0.82), rgba(0, 0, 0, 1) 48%),
+      linear-gradient(180deg, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 1));
+  }
+}
+
+@keyframes jumpscare-shake {
+  0% {
+    transform: translate(0, 0);
+  }
+
+  20% {
+    transform: translate(-10px, 6px);
+  }
+
+  40% {
+    transform: translate(12px, -6px);
+  }
+
+  60% {
+    transform: translate(-8px, -4px);
+  }
+
+  80% {
+    transform: translate(8px, 5px);
+  }
+
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+@keyframes jumpscare-pop {
+  0% {
+    transform: scale(0.45) rotate(-6deg);
+    filter: blur(10px);
+  }
+
+  50% {
+    transform: scale(1.08) rotate(2deg);
+    filter: blur(0);
+  }
+
+  100% {
+    transform: scale(1) rotate(0deg);
+    filter: blur(0);
+  }
+}
+
+@keyframes jumpscare-flicker {
+  0%,
+  100% {
+    filter: contrast(1) brightness(1);
+  }
+
+  50% {
+    filter: contrast(1.45) brightness(1.18);
+  }
+}
+
 @media (max-width: 900px) {
   .hero,
   .instructions {
@@ -239,5 +432,14 @@ button:active {
 
   button {
     width: 100%;
+  }
+
+  .jumpscare-face {
+    width: min(82vw, 360px);
+  }
+
+  .jumpscare-caption {
+    bottom: 9%;
+    letter-spacing: 0.14em;
   }
 }

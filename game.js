@@ -7,9 +7,11 @@ const starsCollectedValue = document.getElementById("stars-collected");
 const shieldsValue = document.getElementById("shields");
 const statusText = document.getElementById("status-text");
 const startButton = document.getElementById("start-button");
+const jumpscare = document.getElementById("jumpscare");
 
 const BEST_SCORE_KEY = "meteor-sprint-best-score";
 const keys = new Set();
+let jumpscareTimeoutId = null;
 
 function readBestScore() {
   try {
@@ -26,6 +28,41 @@ function writeBestScore(score) {
   } catch {
     // Ignore storage failures so the game still runs in restricted browser modes.
   }
+}
+
+function hideJumpscare() {
+  if (!jumpscare) {
+    return;
+  }
+
+  if (jumpscareTimeoutId) {
+    window.clearTimeout(jumpscareTimeoutId);
+    jumpscareTimeoutId = null;
+  }
+
+  jumpscare.classList.remove("is-visible");
+  jumpscare.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("jumpscare-active");
+}
+
+function triggerJumpscare() {
+  if (!jumpscare) {
+    return;
+  }
+
+  hideJumpscare();
+  jumpscare.classList.remove("is-visible");
+  void jumpscare.offsetWidth;
+  jumpscare.classList.add("is-visible");
+  jumpscare.setAttribute("aria-hidden", "false");
+  document.body.classList.add("jumpscare-active");
+
+  jumpscareTimeoutId = window.setTimeout(() => {
+    jumpscare.classList.remove("is-visible");
+    jumpscare.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("jumpscare-active");
+    jumpscareTimeoutId = null;
+  }, 900);
 }
 
 const state = {
@@ -88,6 +125,7 @@ function createBackgroundStars() {
 }
 
 function resetGame() {
+  hideJumpscare();
   state.ship = createShip();
   state.meteors = [];
   state.stars = [];
@@ -164,6 +202,7 @@ function collectStar() {
 function endGame() {
   state.isRunning = false;
   state.isGameOver = true;
+  triggerJumpscare();
 
   const roundedScore = Math.floor(state.score);
   if (roundedScore > state.bestScore) {
