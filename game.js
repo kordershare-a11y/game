@@ -15,6 +15,54 @@ const keys = new Set();
 let jumpscareTimeoutId = null;
 let audioUnlocked = false;
 
+let pointerDragActive = false;
+let pointerDragPointerId = null;
+const pointerDragOffset = { x: 0, y: 0 };
+
+function canvasPointFromClient(clientX, clientY) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  return {
+    x: (clientX - rect.left) * scaleX,
+    y: (clientY - rect.top) * scaleY,
+  };
+}
+
+function releasePointerDrag() {
+  if (pointerDragPointerId !== null) {
+    try {
+      if (canvas.hasPointerCapture(pointerDragPointerId)) {
+        canvas.releasePointerCapture(pointerDragPointerId);
+      }
+    } catch {
+      // Some browsers throw if capture was already released.
+    }
+  }
+
+  pointerDragActive = false;
+  pointerDragPointerId = null;
+}
+
+function applyPointerToShip(clientX, clientY) {
+  if (!state.isRunning || !state.ship || !pointerDragActive) {
+    return;
+  }
+
+  const point = canvasPointFromClient(clientX, clientY);
+  const ship = state.ship;
+  ship.x = clamp(
+    point.x - pointerDragOffset.x,
+    14,
+    canvas.width - ship.width - 14
+  );
+  ship.y = clamp(
+    point.y - pointerDragOffset.y,
+    16,
+    canvas.height - ship.height - 16
+  );
+}
+
 function readBestScore() {
   try {
     const parsedScore = Number.parseInt(localStorage.getItem(BEST_SCORE_KEY) || "0", 10);
@@ -164,6 +212,7 @@ function createBackgroundStars() {
 }
 
 function resetGame() {
+  releasePointerDrag();
   hideJumpscare();
   state.ship = createShip();
   state.meteors = [];
@@ -178,7 +227,7 @@ function resetGame() {
   state.lastTime = 0;
 
   statusText.textContent =
-    "Meteor storm incoming. Dodge meteors and collect stars to repair shields.";
+    "Meteor storm incoming. Drag on the game to steer, or use keys. Dodge meteors and collect stars.";
   startButton.textContent = "Restart game";
   syncHud();
 }
@@ -239,6 +288,7 @@ function collectStar() {
 }
 
 function endGame() {
+  releasePointerDrag();
   state.isRunning = false;
   state.isGameOver = true;
   triggerJumpscare();
@@ -247,9 +297,9 @@ function endGame() {
   if (roundedScore > state.bestScore) {
     state.bestScore = roundedScore;
     writeBestScore(state.bestScore);
-    statusText.textContent = `New best score: ${roundedScore}. Press Space or click Restart game.`;
+    statusText.textContent = `New best score: ${roundedScore}. Tap the game, press Space, or Restart game.`;
   } else {
-    statusText.textContent = `Run over at ${roundedScore} points. Press Space or click Restart game.`;
+    statusText.textContent = `Run over at ${roundedScore} points. Tap the game, press Space, or Restart game.`;
   }
 
   syncHud();
@@ -261,27 +311,30 @@ function update(deltaSeconds) {
   }
 
   const ship = state.ship;
-  let xInput = 0;
-  let yInput = 0;
 
-  if (keys.has("ArrowLeft") || keys.has("a")) {
-    xInput -= 1;
-  }
-  if (keys.has("ArrowRight") || keys.has("d")) {
-    xInput += 1;
-  }
-  if (keys.has("ArrowUp") || keys.has("w")) {
-    yInput -= 1;
-  }
-  if (keys.has("ArrowDown") || keys.has("s")) {
-    yInput += 1;
-  }
+  if (!pointerDragActive) {
+    let xInput = 0;
+    let yInput = 0;
 
-  const magnitude = Math.hypot(xInput, yInput) || 1;
-  ship.x += (xInput / magnitude) * ship.speed * deltaSeconds;
-  ship.y += (yInput / magnitude) * ship.speed * deltaSeconds;
-  ship.x = clamp(ship.x, 14, canvas.width - ship.width - 14);
-  ship.y = clamp(ship.y, 16, canvas.height - ship.height - 16);
+    if (keys.has("ArrowLeft") || keys.has("a")) {
+      xInput -= 1;
+    }
+    if (keys.has("ArrowRight") || keys.has("d")) {
+      xInput += 1;
+    }
+    if (keys.has("ArrowUp") || keys.has("w")) {
+      yInput -= 1;
+    }
+    if (keys.has("ArrowDown") || keys.has("s")) {
+      yInput += 1;
+    }
+
+    const magnitude = Math.hypot(xInput, yInput) || 1;
+    ship.x += (xInput / magnitude) * ship.speed * deltaSeconds;
+    ship.y += (yInput / magnitude) * ship.speed * deltaSeconds;
+    ship.x = clamp(ship.x, 14, canvas.width - ship.width - 14);
+    ship.y = clamp(ship.y, 16, canvas.height - ship.height - 16);
+  }
   ship.invulnerableFor = Math.max(0, ship.invulnerableFor - deltaSeconds);
 
   state.score += deltaSeconds * 24;
@@ -476,7 +529,7 @@ function drawOverlay() {
       canvas.height / 2 + 10
     );
     ctx.fillText(
-      "Press Space or Restart game",
+      "Tap canvas, Space, or Restart game",
       canvas.width / 2,
       canvas.height / 2 + 40
     );
@@ -485,11 +538,11 @@ function drawOverlay() {
     ctx.fillText("Meteor Sprint", canvas.width / 2, canvas.height / 2 - 18);
     ctx.font = "500 18px Inter, system-ui, sans-serif";
     ctx.fillText(
-      "Move with Arrow keys or WASD. Collect stars, avoid meteors.",
+      "Keys, or drag on the game to steer. Collect stars, avoid meteors.",
       canvas.width / 2,
       canvas.height / 2 + 16
     );
-    ctx.fillText("Press Space or Start game", canvas.width / 2, canvas.height / 2 + 44);
+    ctx.fillText("Tap canvas, Space, or Start game", canvas.width / 2, canvas.height / 2 + 44);
   }
 }
 
@@ -548,6 +601,71 @@ window.addEventListener("keydown", (event) => {
 
 window.addEventListener("keyup", (event) => {
   keys.delete(normalizeKey(event.key));
+});
+
+canvas.addEventListener("pointerdown", (event) => {
+  if (event.button !== undefined && event.button !== 0) {
+    return;
+  }
+
+  event.preventDefault();
+  void unlockAudio();
+
+  const point = canvasPointFromClient(event.clientX, event.clientY);
+
+  if (!state.isRunning) {
+    resetGame();
+  }
+
+  if (!state.isRunning || !state.ship) {
+    return;
+  }
+
+  try {
+    canvas.setPointerCapture(event.pointerId);
+  } catch {
+    // setPointerCapture can fail in rare cases; movement still works without capture.
+  }
+
+  pointerDragPointerId = event.pointerId;
+  pointerDragActive = true;
+  pointerDragOffset.x = point.x - state.ship.x;
+  pointerDragOffset.y = point.y - state.ship.y;
+  applyPointerToShip(event.clientX, event.clientY);
+});
+
+canvas.addEventListener("pointermove", (event) => {
+  if (!pointerDragActive || event.pointerId !== pointerDragPointerId) {
+    return;
+  }
+
+  event.preventDefault();
+  applyPointerToShip(event.clientX, event.clientY);
+});
+
+canvas.addEventListener("pointerup", (event) => {
+  if (event.pointerId !== pointerDragPointerId) {
+    return;
+  }
+
+  event.preventDefault();
+  releasePointerDrag();
+});
+
+canvas.addEventListener("pointercancel", (event) => {
+  if (event.pointerId !== pointerDragPointerId) {
+    return;
+  }
+
+  releasePointerDrag();
+});
+
+canvas.addEventListener("lostpointercapture", (event) => {
+  if (event.pointerId !== pointerDragPointerId) {
+    return;
+  }
+
+  releasePointerDrag();
 });
 
 startButton.addEventListener("click", () => {
