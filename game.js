@@ -608,6 +608,11 @@ canvas.addEventListener("pointerdown", (event) => {
     return;
   }
 
+  if (pointerDragActive) {
+    event.preventDefault();
+    return;
+  }
+
   event.preventDefault();
   void unlockAudio();
 
