@@ -13,7 +13,8 @@ const keys = new Set();
 
 function readBestScore() {
   try {
-    return Number.parseInt(localStorage.getItem(BEST_SCORE_KEY) || "0", 10);
+    const parsedScore = Number.parseInt(localStorage.getItem(BEST_SCORE_KEY) || "0", 10);
+    return Number.isFinite(parsedScore) ? parsedScore : 0;
   } catch {
     return 0;
   }
