@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Meteor Sprint</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Arcade game program</p>
+          <h1>Meteor Sprint</h1>
+          <p class="tagline">
+            Pilot a neon ship through a meteor storm. Dodge danger, collect stars,
+            and chase a new high score.
+          </p>
+        </div>
+
+        <div class="stats-panel" aria-label="Game statistics">
+          <div class="stat-card">
+            <span>Score</span>
+            <strong id="score">0</strong>
+          </div>
+          <div class="stat-card">
+            <span>Best</span>
+            <strong id="best-score">0</strong>
+          </div>
+          <div class="stat-card">
+            <span>Stars</span>
+            <strong id="stars-collected">0</strong>
+          </div>
+          <div class="stat-card">
+            <span>Shields</span>
+            <strong id="shields">3</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="game-shell">
+        <canvas id="game-canvas" width="720" height="480">
+          Meteor Sprint requires a browser with canvas support.
+        </canvas>
+
+        <div class="hud">
+          <button id="start-button" type="button">Start game</button>
+          <p id="status-text">
+            Use Arrow keys or WASD to move. Press Space to start a run.
+          </p>
+        </div>
+      </section>
+
+      <section class="instructions">
+        <article class="instruction-card">
+          <h2>Objective</h2>
+          <p>
+            Stay alive as the storm intensifies. Meteors drain shields, stars
+            boost your score, and every five stars repair one shield.
+          </p>
+        </article>
+
+        <article class="instruction-card">
+          <h2>Controls</h2>
+          <p>
+            Move with Arrow keys or WASD. Press the button any time to restart,
+            or press Space after a run ends to jump back in.
+          </p>
+        </article>
+
+        <article class="instruction-card">
+          <h2>Tip</h2>
+          <p>
+            Sweep in short arcs instead of hugging one edge. Leaving yourself an
+            escape route matters more than grabbing every star.
+          </p>
+        </article>
+      </section>
+    </main>
+
+    <script src="game.js"></script>
+  </body>
+</html>

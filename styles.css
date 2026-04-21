@@ -1,0 +1,243 @@
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  color-scheme: dark;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  --bg: #050816;
+  --panel: rgba(11, 18, 40, 0.8);
+  --panel-border: rgba(137, 180, 255, 0.16);
+  --accent: #5ee7ff;
+  --accent-strong: #7f5cff;
+  --text: #ecf3ff;
+  --muted: #9db1d4;
+  --danger: #ff6b6b;
+  --success: #7dffb1;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top, rgba(73, 103, 255, 0.28), transparent 35%),
+    radial-gradient(circle at bottom left, rgba(0, 231, 195, 0.15), transparent 30%),
+    linear-gradient(180deg, #060816 0%, #04050d 100%);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  background-image:
+    radial-gradient(circle at 15% 20%, rgba(255, 255, 255, 0.5) 1px, transparent 1px),
+    radial-gradient(circle at 80% 35%, rgba(255, 255, 255, 0.4) 1.4px, transparent 1.4px),
+    radial-gradient(circle at 65% 75%, rgba(255, 255, 255, 0.35) 1px, transparent 1px);
+  background-size: 220px 220px, 260px 260px, 180px 180px;
+}
+
+.app {
+  width: min(1100px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 2rem 0 3rem;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 1.5rem;
+  align-items: stretch;
+  margin-bottom: 1.5rem;
+}
+
+.hero-copy,
+.stats-panel,
+.instruction-card,
+.game-shell {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 24px;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.3);
+}
+
+.hero-copy {
+  padding: 2rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2.8rem, 5vw, 4.2rem);
+  line-height: 0.95;
+}
+
+.tagline {
+  margin: 1rem 0 0;
+  max-width: 44rem;
+  color: var(--muted);
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+.stats-panel {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  padding: 1.25rem;
+}
+
+.stat-card {
+  padding: 1rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.stat-card span {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+}
+
+.stat-card strong {
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  color: var(--text);
+}
+
+.game-shell {
+  padding: 1rem;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  border-radius: 20px;
+  background:
+    linear-gradient(180deg, rgba(17, 28, 61, 0.92), rgba(4, 8, 24, 0.96)),
+    #081024;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.hud {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 0.4rem 0.2rem;
+}
+
+button {
+  appearance: none;
+  border: none;
+  border-radius: 999px;
+  padding: 0.9rem 1.4rem;
+  font: inherit;
+  font-weight: 700;
+  color: #07101e;
+  background: linear-gradient(135deg, var(--accent), #9cf7ff);
+  box-shadow: 0 10px 30px rgba(94, 231, 255, 0.3);
+  cursor: pointer;
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease,
+    filter 120ms ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 35px rgba(94, 231, 255, 0.35);
+  filter: brightness(1.05);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+#status-text {
+  margin: 0;
+  color: var(--muted);
+  text-align: right;
+  line-height: 1.5;
+}
+
+.instructions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.instruction-card {
+  padding: 1.4rem;
+}
+
+.instruction-card h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
+}
+
+.instruction-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+@media (max-width: 900px) {
+  .hero,
+  .instructions {
+    grid-template-columns: 1fr;
+  }
+
+  .hud {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  #status-text {
+    text-align: left;
+  }
+}
+
+@media (max-width: 640px) {
+  .app {
+    width: min(100% - 1rem, 1100px);
+    padding-top: 1rem;
+  }
+
+  .hero-copy,
+  .stats-panel,
+  .instruction-card,
+  .game-shell {
+    border-radius: 20px;
+  }
+
+  .hero-copy {
+    padding: 1.5rem;
+  }
+
+  .stats-panel {
+    grid-template-columns: 1fr 1fr;
+    padding: 1rem;
+    gap: 0.8rem;
+  }
+
+  button {
+    width: 100%;
+  }
+}
