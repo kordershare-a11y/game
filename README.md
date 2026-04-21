@@ -26,3 +26,14 @@ python3 -m http.server 8000
 ```
 
 Then visit `http://localhost:8000`.
+
+## Custom jumpscare assets
+
+To replace the default jumpscare media with your own files, put them here:
+
+- `assets/jumpscare.jpg`
+- `assets/Jumpscare Sound.mp3`
+
+After uploading those files, refresh the page and the game will use them
+automatically. Until then, it falls back to the built-in default image and
+sound.

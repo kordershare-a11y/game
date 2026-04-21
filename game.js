@@ -8,12 +8,44 @@ const shieldsValue = document.getElementById("shields");
 const statusText = document.getElementById("status-text");
 const startButton = document.getElementById("start-button");
 const jumpscare = document.getElementById("jumpscare");
+const jumpscareImage = document.getElementById("jumpscare-image");
 const jumpscareAudio = document.getElementById("jumpscare-audio");
 
 const BEST_SCORE_KEY = "meteor-sprint-best-score";
+const CUSTOM_JUMPSCARE_IMAGE = "assets/jumpscare.jpg";
+const FALLBACK_JUMPSCARE_IMAGE = "assets/jumpscare-face.svg";
+const CUSTOM_JUMPSCARE_AUDIO = "assets/Jumpscare Sound.mp3";
+const FALLBACK_JUMPSCARE_AUDIO = "assets/jumpscare-sting.wav";
 const keys = new Set();
 let jumpscareTimeoutId = null;
 let audioUnlocked = false;
+
+function setImageFallback() {
+  if (!jumpscareImage) {
+    return;
+  }
+
+  if (jumpscareImage.dataset.fallbackApplied === "true") {
+    return;
+  }
+
+  jumpscareImage.dataset.fallbackApplied = "true";
+  jumpscareImage.src = FALLBACK_JUMPSCARE_IMAGE;
+}
+
+function setAudioFallback() {
+  if (!jumpscareAudio) {
+    return;
+  }
+
+  if (jumpscareAudio.dataset.fallbackApplied === "true") {
+    return;
+  }
+
+  jumpscareAudio.dataset.fallbackApplied = "true";
+  jumpscareAudio.src = FALLBACK_JUMPSCARE_AUDIO;
+  jumpscareAudio.load();
+}
 
 function readBestScore() {
   try {
@@ -554,6 +586,17 @@ startButton.addEventListener("click", () => {
   void unlockAudio();
   resetGame();
 });
+
+if (jumpscareImage) {
+  jumpscareImage.addEventListener("error", setImageFallback, { once: true });
+  jumpscareImage.src = CUSTOM_JUMPSCARE_IMAGE;
+}
+
+if (jumpscareAudio) {
+  jumpscareAudio.addEventListener("error", setAudioFallback, { once: true });
+  jumpscareAudio.src = CUSTOM_JUMPSCARE_AUDIO;
+  jumpscareAudio.load();
+}
 
 state.backgroundStars = createBackgroundStars();
 state.ship = createShip();
