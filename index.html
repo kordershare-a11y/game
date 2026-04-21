@@ -80,21 +80,16 @@
 
     <div id="jumpscare" class="jumpscare" aria-hidden="true">
       <div class="jumpscare-noise" role="presentation"></div>
-      <div class="jumpscare-face jumpscare-face-shadow" role="presentation"></div>
-      <div class="jumpscare-face" role="presentation">
-        <span class="jumpscare-eye jumpscare-eye-left">
-          <span class="jumpscare-pupil"></span>
-        </span>
-        <span class="jumpscare-eye jumpscare-eye-right">
-          <span class="jumpscare-pupil"></span>
-        </span>
-        <span class="jumpscare-nose"></span>
-        <span class="jumpscare-mouth">
-          <span class="jumpscare-teeth"></span>
-        </span>
-      </div>
+      <img
+        class="jumpscare-image"
+        src="assets/jumpscare-face.svg"
+        alt=""
+        aria-hidden="true"
+      />
       <p class="jumpscare-caption">THE STORM WANTS YOU</p>
     </div>
+
+    <audio id="jumpscare-audio" preload="auto" src="assets/jumpscare-sting.wav"></audio>
 
     <script src="game.js"></script>
   </body>
