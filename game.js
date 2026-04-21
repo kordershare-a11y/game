@@ -14,6 +14,12 @@ const BEST_SCORE_KEY = "meteor-sprint-best-score";
 const keys = new Set();
 let jumpscareTimeoutId = null;
 let audioUnlocked = false;
+const pointerState = {
+  isActive: false,
+  pointerId: null,
+  x: 0,
+  y: 0,
+};
 
 function readBestScore() {
   try {
@@ -198,6 +204,30 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
+function clearPointerInput() {
+  pointerState.isActive = false;
+  pointerState.pointerId = null;
+}
+
+function getCanvasPoint(event) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+
+  return {
+    x: clamp((event.clientX - rect.left) * scaleX, 0, canvas.width),
+    y: clamp((event.clientY - rect.top) * scaleY, 0, canvas.height),
+  };
+}
+
+function updatePointerInput(event) {
+  const point = getCanvasPoint(event);
+  pointerState.isActive = true;
+  pointerState.pointerId = event.pointerId;
+  pointerState.x = point.x;
+  pointerState.y = point.y;
+}
+
 function circleTouchesShip(circle, ship) {
   const closestX = clamp(circle.x, ship.x, ship.x + ship.width);
   const closestY = clamp(circle.y, ship.y, ship.y + ship.height);
@@ -247,9 +277,9 @@ function endGame() {
   if (roundedScore > state.bestScore) {
     state.bestScore = roundedScore;
     writeBestScore(state.bestScore);
-    statusText.textContent = `New best score: ${roundedScore}. Press Space or click Restart game.`;
+    statusText.textContent = `New best score: ${roundedScore}. Press Space, tap the playfield, or use Restart game.`;
   } else {
-    statusText.textContent = `Run over at ${roundedScore} points. Press Space or click Restart game.`;
+    statusText.textContent = `Run over at ${roundedScore} points. Press Space, tap the playfield, or use Restart game.`;
   }
 
   syncHud();
@@ -264,22 +294,36 @@ function update(deltaSeconds) {
   let xInput = 0;
   let yInput = 0;
 
-  if (keys.has("ArrowLeft") || keys.has("a")) {
-    xInput -= 1;
-  }
-  if (keys.has("ArrowRight") || keys.has("d")) {
-    xInput += 1;
-  }
-  if (keys.has("ArrowUp") || keys.has("w")) {
-    yInput -= 1;
-  }
-  if (keys.has("ArrowDown") || keys.has("s")) {
-    yInput += 1;
+  if (pointerState.isActive) {
+    const shipCenterX = ship.x + ship.width / 2;
+    const shipCenterY = ship.y + ship.height / 2;
+    const dx = pointerState.x - shipCenterX;
+    const dy = pointerState.y - shipCenterY;
+
+    if (Math.hypot(dx, dy) > 12) {
+      xInput = dx;
+      yInput = dy;
+    }
+  } else {
+    if (keys.has("ArrowLeft") || keys.has("a")) {
+      xInput -= 1;
+    }
+    if (keys.has("ArrowRight") || keys.has("d")) {
+      xInput += 1;
+    }
+    if (keys.has("ArrowUp") || keys.has("w")) {
+      yInput -= 1;
+    }
+    if (keys.has("ArrowDown") || keys.has("s")) {
+      yInput += 1;
+    }
   }
 
-  const magnitude = Math.hypot(xInput, yInput) || 1;
-  ship.x += (xInput / magnitude) * ship.speed * deltaSeconds;
-  ship.y += (yInput / magnitude) * ship.speed * deltaSeconds;
+  const magnitude = Math.hypot(xInput, yInput);
+  if (magnitude > 0) {
+    ship.x += (xInput / magnitude) * ship.speed * deltaSeconds;
+    ship.y += (yInput / magnitude) * ship.speed * deltaSeconds;
+  }
   ship.x = clamp(ship.x, 14, canvas.width - ship.width - 14);
   ship.y = clamp(ship.y, 16, canvas.height - ship.height - 16);
   ship.invulnerableFor = Math.max(0, ship.invulnerableFor - deltaSeconds);
@@ -485,11 +529,15 @@ function drawOverlay() {
     ctx.fillText("Meteor Sprint", canvas.width / 2, canvas.height / 2 - 18);
     ctx.font = "500 18px Inter, system-ui, sans-serif";
     ctx.fillText(
-      "Move with Arrow keys or WASD. Collect stars, avoid meteors.",
+      "Use Arrow keys, WASD, or drag on the playfield.",
       canvas.width / 2,
       canvas.height / 2 + 16
     );
-    ctx.fillText("Press Space or Start game", canvas.width / 2, canvas.height / 2 + 44);
+    ctx.fillText(
+      "Press Space, tap playfield, or Start game",
+      canvas.width / 2,
+      canvas.height / 2 + 44
+    );
   }
 }
 
@@ -528,6 +576,58 @@ function normalizeKey(key) {
   return key.length === 1 ? key.toLowerCase() : key;
 }
 
+function handlePointerDown(event) {
+  if (event.pointerType === "mouse" && event.button !== 0) {
+    return;
+  }
+
+  if (pointerState.isActive && pointerState.pointerId !== event.pointerId) {
+    return;
+  }
+
+  void unlockAudio();
+  event.preventDefault();
+
+  if (!state.isRunning) {
+    resetGame();
+  }
+
+  updatePointerInput(event);
+
+  if (typeof canvas.setPointerCapture === "function") {
+    try {
+      canvas.setPointerCapture(event.pointerId);
+    } catch {
+      // Ignore capture errors so touch input still works on browsers with partial support.
+    }
+  }
+}
+
+function handlePointerMove(event) {
+  if (!pointerState.isActive || pointerState.pointerId !== event.pointerId) {
+    return;
+  }
+
+  event.preventDefault();
+  updatePointerInput(event);
+}
+
+function handlePointerEnd(event) {
+  if (!pointerState.isActive || pointerState.pointerId !== event.pointerId) {
+    return;
+  }
+
+  clearPointerInput();
+
+  if (typeof canvas.releasePointerCapture === "function") {
+    try {
+      canvas.releasePointerCapture(event.pointerId);
+    } catch {
+      // Ignore release errors when the browser auto-released capture first.
+    }
+  }
+}
+
 window.addEventListener("keydown", (event) => {
   void unlockAudio();
   const key = normalizeKey(event.key);
@@ -549,6 +649,11 @@ window.addEventListener("keydown", (event) => {
 window.addEventListener("keyup", (event) => {
   keys.delete(normalizeKey(event.key));
 });
+
+canvas.addEventListener("pointerdown", handlePointerDown);
+canvas.addEventListener("pointermove", handlePointerMove);
+canvas.addEventListener("pointerup", handlePointerEnd);
+canvas.addEventListener("pointercancel", handlePointerEnd);
 
 startButton.addEventListener("click", () => {
   void unlockAudio();

@@ -132,6 +132,7 @@ canvas {
   max-width: 100%;
   height: auto;
   border-radius: 20px;
+  touch-action: none;
   background:
     linear-gradient(180deg, rgba(17, 28, 61, 0.92), rgba(4, 8, 24, 0.96)),
     #081024;
